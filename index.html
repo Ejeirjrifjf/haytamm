@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAYTAM</title>
+    <title>حاسبة المعدل المدرسي </title>
     <style>
-        /* التنسيقات (CSS) */
+        /* 1. التنسيقات الأساسية والمتغيرة (CSS Variables) */
         :root {
-            --primary-color: #007bff; /* أزرق أساسي */
-            --secondary-color: #28a745; /* أخضر للنتائج */
+            --primary-color: #007bff;
+            --secondary-color: #28a745;
             --background-light: #f8f9fa;
             --header-bg: #e9ecef;
             --text-color: #343a40;
@@ -100,7 +100,7 @@
             outline: none;
         }
         .average-cell {
-            background-color: #e9f7ef; 
+            background-color: #e9f7ef;
             font-weight: bold;
             color: var(--secondary-color);
             font-size: 1.1em;
@@ -139,6 +139,40 @@
             color: var(--text-color);
             font-weight: bold;
             font-size: 0.95em;
+        }
+
+        /* 2. استجابة التصميم للهواتف (Media Queries) - حل مشكلة التداخل */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 10px;
+                margin: 10px auto;
+            }
+            h2 {
+                font-size: 1.6em;
+            }
+            p.subtitle {
+                font-size: 0.85em;
+            }
+            /* تصغير حجم الخط في الجدول ليتسع المحتوى */
+            table, th, td {
+                font-size: 0.75em; /* تصغير الخط أكثر للجدول */
+                padding: 4px 1px;
+            }
+            /* تضييق عرض حقول الإدخال */
+            input[type="text"] {
+                width: 98%; 
+                padding: 2px;
+                font-size: 0.75em;
+            }
+            /* تحسين شكل المعدل النهائي على الهاتف */
+            #result-box {
+                font-size: 1.3em;
+                padding: 12px;
+            }
+            /* تصغير الخط في التذييل */
+            .footer {
+                font-size: 0.75em;
+            }
         }
     </style>
 </head>
@@ -179,11 +213,11 @@
     </div>
 
     <div class="footer">
-        ......................<strong>.....</strong>
+        .........<strong>......</strong>
     </div>
 
     <script>
-        // قائمة بالمواد
+        // 3. قائمة المواد والثوابت لـ JavaScript
         const subjects = [
             "الرياضيات", "اللغة الفرنسية", "علوم الحياة والأرض", 
             "الاجتماعيات", "التربية الإسلامية", "التكنولوجيا", 
@@ -194,25 +228,22 @@
         const tableBody = document.getElementById('grades-table-body');
         const totalSimpleAverageElement = document.getElementById('total-simple-average');
         const finalAverageElement = document.getElementById('final-average');
-        const numInputsPerSubject = 5; // 4 فروض + 1 أنشطة
-        const localStorageKey = 'gradesCalculatorData'; // المفتاح لحفظ البيانات في المتصفح
+        const numInputsPerSubject = 5;
+        const localStorageKey = 'haithamGradesDataV2'; // مفتاح جديد لتجنب التداخل مع الإصدارات القديمة
 
-        // 1. دالة الحفظ التلقائي
+        // 4. دالة الحفظ التلقائي والتحميل
         function saveGrades() {
             const gradesData = {};
             subjects.forEach((subject, index) => {
                 gradesData[subject] = [];
                 for (let i = 0; i < numInputsPerSubject; i++) {
                     const inputElement = document.getElementById(`grade-${index}-${i}`);
-                    // نحفظ القيمة كما هي في حقل الإدخال (سواء كانت نقطة أو فاصلة)
                     gradesData[subject].push(inputElement.value);
                 }
             });
-            // حفظ البيانات كـ JSON في المتصفح
             localStorage.setItem(localStorageKey, JSON.stringify(gradesData));
         }
 
-        // 2. دالة تحميل العلامات
         function loadGrades() {
             const savedData = localStorage.getItem(localStorageKey);
             if (savedData) {
@@ -221,7 +252,6 @@
                     if (gradesData[subject]) {
                         for (let i = 0; i < numInputsPerSubject; i++) {
                             const inputElement = document.getElementById(`grade-${index}-${i}`);
-                            // ملء حقول الإدخال بالقيم المحفوظة
                             if (inputElement && gradesData[subject][i] !== undefined) {
                                 inputElement.value = gradesData[subject][i];
                             }
@@ -231,34 +261,36 @@
             }
         }
 
-        // دالة لمعالجة إدخال الفاصلة (,) أو النقطة (.)
+        // 5. دالة معالجة الإدخال والحفظ والحساب
         function formatAndSaveInput(event) {
             const input = event.target;
-            // استبدال الفاصلة (,) بالنقطة (.) لكي يتعرف عليها JavaScript كرقم عشري للحساب
+            // استبدال الفاصلة (,) بالنقطة (.)
             input.value = input.value.replace(',', '.');
             
-            // التأكد من أن القيمة ضمن النطاق [0, 20]
+            // التحقق من حدود العلامة [0, 20]
             let grade = parseFloat(input.value);
             if (!isNaN(grade)) {
                 if (grade < 0) input.value = '0';
                 if (grade > 20) input.value = '20';
+            } else if (input.value === '.') {
+                // السماح بالنقطة في البداية لتسهيل الكتابة العشرية
+            } else if (input.value !== '') {
+                // مسح القيمة إذا كانت غير رقمية وغير فاصلة
+                // input.value = ''; // قد يزعج المستخدم، نفضل تركها ليصححها
             }
             
-            // تشغيل دالة الحساب
+            // تشغيل دالة الحساب والحفظ
             calculateOverallAverage();
-            
-            // **تشغيل دالة الحفظ التلقائي**
             saveGrades();
         }
 
-        // دالة لحساب متوسط المادة (لم تتغير)
+        // 6. دالة لحساب متوسط المادة
         function calculateSubjectAverage(index) {
             let sumOfGrades = 0;
             let countOfGrades = 0;
             
             for (let i = 0; i < numInputsPerSubject; i++) {
                 const inputElement = document.getElementById(`grade-${index}-${i}`);
-                // نستخدم parseFloat مباشرة، وهي تتعرف على النقطة (.) كفاصل عشري
                 const grade = parseFloat(inputElement.value);
 
                 if (!isNaN(grade) && grade >= 0 && grade <= 20) {
@@ -275,7 +307,7 @@
             return subjectAverage;
         }
 
-        // دالة تحسب المعدل العام وتحديث النتائج (لم تتغير)
+        // 7. دالة تحسب المعدل العام وتحديث النتائج
         function calculateOverallAverage() {
             let totalSubjectAverages = 0;
             let countedSubjects = 0;
@@ -303,7 +335,7 @@
             finalAverageElement.textContent = finalAverage > 0 ? finalAverage.toFixed(2) : '---';
         }
 
-        // بناء صفوف الجدول عند تحميل الصفحة
+        // 8. بناء الجدول
         function buildTable() {
             subjects.forEach((subject, index) => {
                 const row = tableBody.insertRow();
@@ -327,10 +359,10 @@
                 `;
             });
             
-            // 3. تحميل العلامات المحفوظة عند بناء الجدول
+            // تحميل العلامات المحفوظة عند بناء الجدول
             loadGrades(); 
             
-            // 4. حساب المعدلات بناءً على العلامات التي تم تحميلها
+            // حساب المعدلات بناءً على العلامات التي تم تحميلها
             calculateOverallAverage();
         }
 
